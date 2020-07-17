@@ -12,7 +12,8 @@ def info_log(message, end='\n'):
 
 
 class Player():
-    player_re = r"^#\s+(\d+) \"(.+)\"\s+\[U:1:(\d+)]\s+(\d+:)+\d+\s+(\d+)\s+(\d+) (.+)"
+    player_re = r"^#\s+(\d+) \"(.+)\"\s+\[U:1:(\d+)]\s+(\d+:)+" + \
+        r"\d+\s+(\d+)\s+(\d+) (.+)"
 
     def __init__(self, line):
         m = re.match(self.player_re, line)
@@ -36,7 +37,6 @@ class Reader():
     # userid   name   steam id   time   ping   loss   active
 
     in_status = False
-    seek_end = True
     players = []
     attempts = 0
 
@@ -46,15 +46,14 @@ class Reader():
     def run(self):
         while True:
             with open(self.fname) as f:
-                if self.seek_end:
-                    f.seek(0, 2)
+                f.seek(0, 2)
 
                 while True:
                     line = f.readline()
 
                     # Use line:
                     if not self.in_status:
-                        print(colored(line, 'cyan'), end='')
+                        # print(colored(line, 'cyan'), end='')
                         m = re.match(self.status_re, line)
                         if m:
                             self.num_players = int(m.group(1))
@@ -62,7 +61,8 @@ class Reader():
                             self.max = m.group(3)
                             self.in_status = True
 
-                            info_log("==> Got status header")
+                            info_log("==> Got status header",
+                                     self.num_players)
                     else:
                         if self.attempts > MAX_ATTEMPTS:
                             self.attempts = 0
@@ -72,7 +72,7 @@ class Reader():
                             continue
 
                         if line.startswith('# userid name'):
-                            pass
+                            continue
 
                         if self.num_players > 0:
                             info_log("==> Players left, scanning... ", end='')
@@ -80,13 +80,16 @@ class Reader():
                                 player = Player(line)
                                 self.players.append(player)
                                 self.num_players -= 1
-                                info_log("Done!")
+                                info_log(f"Done! {self.num_players}")
+                                info_log(player)
                             except Exception as e:
                                 info_log("Not Yet... " + str(e))
                                 info_log(line, end='')
                                 self.attempts += 1
                                 pass
-                        else:
+
+                        if self.num_players <= 0:
+                            self.in_status = False
                             self.got_players(self.players)
 
     def got_players(self, players):
@@ -96,11 +99,12 @@ class Reader():
             print(colored(p, 'red'))
 
 
-log = 'console.log'
+if __name__ == '__main__':
+    log = 'console.log'
 
-if len(sys.argv) > 1:
-    log = sys.argv[1]
+    if len(sys.argv) > 1:
+        log = sys.argv[1]
 
-reader = Reader(log)
+    reader = Reader(log)
 
-reader.run()
+    reader.run()

@@ -4,3 +4,4 @@ pyyaml
 python-dotenv
 termcolor
 notify2
+ttkthemes
