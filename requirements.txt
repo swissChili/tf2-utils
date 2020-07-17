@@ -1,0 +1,6 @@
+discord.py
+pynput
+pyyaml
+python-dotenv
+termcolor
+notify2

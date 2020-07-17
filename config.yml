@@ -1,0 +1,17 @@
+allowed_commands:
+    - status
+    - slot1
+    - slot2
+    - slot3
+    - slot4
+    - say
+
+toggle_commands:
+    - left
+    - right
+    - forward
+    - back
+    - jump
+    - duck
+    - attack
+    - attack2
