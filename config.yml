@@ -15,3 +15,11 @@ toggle_commands:
     - duck
     - attack
     - attack2
+
+# set this to false on windows
+only_run_when_focused: true
+
+# what windows need to be focused to run?
+allowed_windows:
+    - '*Team Fortress 2*'
+    - '*GL*'

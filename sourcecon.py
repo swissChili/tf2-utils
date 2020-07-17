@@ -5,6 +5,7 @@ from threading import Lock
 from pynput.keyboard import Controller, Key
 import yaml
 import notify2
+import fnmatch
 from io import open
 
 # handle concurrent requests cleanly (typing 2 things at once breaks stuff)
@@ -23,6 +24,11 @@ class Console():
             self.allowed_cmds = conf['allowed_commands']
         if isinstance(conf['toggle_commands'], list):
             self.toggle_cmds = conf['toggle_commands']
+
+        self.run_when_focused = conf['only_run_when_focused']
+
+        if isinstance(conf['allowed_windows'], list):
+            self.allowed_windows = conf['allowed_windows']
 
     # polyfill for old versions of pynput (pypi)
     def tap(self, key):
@@ -70,8 +76,11 @@ class Console():
             n.show()
 
     def can_run(self):
-        # TODO: make cross platform (is this even possible?)
-        # un comment the next line to disable this:
-        # return True
-        win = str(check_output(['xdotool', 'getwindowfocus', 'getwindowname']))
-        return 'hl2' in win or 'GL' in win
+        if self.only_run_when_focused:
+            win = str(check_output(['xdotool', 'getwindowfocus', 'getwindowname']))
+
+            for allowed in self.allowed_windows:
+                if fnmatch.fnmatch(win, allowed):
+                    return True
+            return False
+        return True
