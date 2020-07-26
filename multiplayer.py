@@ -2,17 +2,32 @@
 
 from sourcecon import Console
 from dotenv import load_dotenv
+import argparse
 import sys
 import discord
 import os
 
+parser = argparse.ArgumentParser(description='tf2utils multiplayer')
+parser.add_argument('--config', '-c', dest='config',
+                    type=str, help="Config file")
+parser.add_argument('--game', '-g', type=str, dest='game',
+                    help="Path to game dir (eg: Team Fortress 2/tf)")
+
+args = parser.parse_args()
+
+if args.game:
+    game = args.game
+else:
+    print("GIVE GAME PATH")
+    os.exit(1)
+
 client = discord.Client()
-con = Console()
+con = Console(game)
 
 load_dotenv()
 
-if len(sys.argv) > 1:
-    con.load_config(sys.argv[1])
+if args.config:
+    con.load_config(args.config)
 
 
 @client.event

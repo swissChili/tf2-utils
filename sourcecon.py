@@ -15,8 +15,9 @@ console_mutex = Lock()
 class Console():
     keyboard = Controller()
 
-    def __init__(self):
+    def __init__(self, mod_path):
         notify2.init('tf2utils')
+        self.mod_path = mod_path
 
     def load_config(self, conf_file):
         conf = yaml.load(open(conf_file, 'r'), Loader=yaml.SafeLoader)
@@ -30,29 +31,33 @@ class Console():
         if isinstance(conf['allowed_windows'], list):
             self.allowed_windows = conf['allowed_windows']
 
+    # what key is bound to "exec stdin"
+    exec_stdin_key = Key.page_up
+
+    def write_to(self, name, content):
+        with open(name, 'w+') as f:
+            f.write(content)
+
     # polyfill for old versions of pynput (pypi)
     def tap(self, key):
         self.keyboard.press(key)
         time.sleep(0.02)
         self.keyboard.release(key)
 
+    def exec_command(self, cmd):
+        self.write_to(self.mod_path + '/cfg/stdin.cfg', cmd)
+
+        self.tap(self.exec_stdin_key)
+
     def con_write(self, cmd):
         console_mutex.acquire()
         try:
-            self.tap('`')
-            time.sleep(0.05)
             if cmd.split(' ')[0] in self.toggle_cmds:
-                self.keyboard.type('+' + cmd)
+                self.exec_command('+' + cmd)
                 sleep(0.05)
-                self.tap(Key.enter)
-                sleep(0.05)
-                self.keyboard.type('-' + cmd)
+                self.exec_command('-' + cmd)
             else:
-                self.keyboard.type(cmd)
-            time.sleep(0.05)
-            self.tap(Key.enter)
-            time.sleep(0.02)
-            self.tap('`')
+                self.exec_command(cmd)
         # just in case of exception, clean up cleanly
         finally:
             console_mutex.release()
@@ -61,6 +66,8 @@ class Console():
                     'slot3', 'slot4', 'slot5', 'say']
     toggle_cmds = ['left', 'right', 'forward', 'back',
                    'jump', 'duck', 'attack', 'attack2']
+    run_when_focused = True
+    allowed_windows = ['*Team Fortress 2*']
 
     def safe_run(self, cmd):
         # dirty way to prevent simple injection
@@ -76,8 +83,9 @@ class Console():
             n.show()
 
     def can_run(self):
-        if self.only_run_when_focused:
-            win = str(check_output(['xdotool', 'getwindowfocus', 'getwindowname']))
+        if self.run_when_focused:
+            win = str(check_output(
+                ['xdotool', 'getwindowfocus', 'getwindowname']))
 
             for allowed in self.allowed_windows:
                 if fnmatch.fnmatch(win, allowed):
